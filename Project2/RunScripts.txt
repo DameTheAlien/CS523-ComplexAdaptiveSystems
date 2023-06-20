@@ -1,0 +1,4 @@
+./upcxx-run -n 10 -N 1 -- /nfs/student/student/d/dfranco/CS/CS523/simcov-master/install/bin/simcov
+
+./upcxx-run -n 2 -N 1 -- /nfs/student/student/d/dfranco/CS/CS523/simcov-master/install/bin/simcov --config /nfs/student/student/d/dfranco/CS/CS523/simcov-master/covid_default.config
+

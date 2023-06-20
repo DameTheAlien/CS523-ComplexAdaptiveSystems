@@ -1,0 +1,375 @@
+Running SIMCoV at CARCA
+Abigail Pribisova
+Questions/Corrections? Contact: apribis@unm.edu
+
+Included in this tutorial repo:
+1. SIMCoV-CARC-Tutorial.txt - text file with instructions
+2. sample-demo.mov - movie with visualization of the sample-demo.config
+3. simcov-master.zip - zipped version of SIMCoV repository
+4. sample-demo - repository with COMPLETED sample-demo, so that Paraview can be tested without completing a run at CARC
+
+0.1 Valuable Resources
+  1. CARC website (https://carc.unm.edu/)
+  2. Written CARC tutorials (https://github.com/UNM-CARC/QuickBytes/blob/master/README.md)
+  3. Video CARC tutorials (https://www.youtube.com/playlist?list=PLvr5gRBLi7VAzEB_t5aXOLHLfdIu2s1hZ)
+  4. CARC Helpdesk (where you submit tickets!) (https://support.alliance.unm.edu/)
+  5. Office hours (https://carc.unm.edu/user-support-2/walk-in-hours1.html)
+  6. Example SLURM scripts (for Xena) (https://help.rc.ufl.edu/doc/Sample_SLURM_Scripts)
+  7. Example PBS scripts (for Wheeler) (https://gist.github.com/mathsam/6201697)
+
+0.2 Running on Xena
+  1. ATTENTION: this assumes that you have a CARC account with access to the Xena machine!
+  2. Open your terminal on your local computer and enter:
+    ssh <username>@xena.alliance.unm.edu
+  3. Enter your password. The screen will not indicate that a password is being typed, but it *is* registering that you are entering your password. Then, hit Enter.
+    If it says, "Connection closed by ... port ...", this means you waited too long to put in your password. Re-enter the ssh command.
+  4. Useful commands:
+    qgrok
+      - queues: types of machines
+        - singleGPU is enough for running basic experiments.
+        - When loading the lung representation or working with volumes greater than 250 x 250 x 250, bigmem-1TB or bigmem-3TB are required.
+      - free: number of free machines of that type
+      - busy: number of busy machines of that type
+      - offline: number of offline machines of that type
+      - jobs: number of jobs currently running on that type of machine
+      - nodes: number of nodes in use for that type of machine
+      - CPUs: number of CPUs in use for that type of machine
+    qstat
+      - Job id: job ID assigned when a run is started
+      - Name: name of that run
+      - Username: username of person that started that run
+      - Time Use: how much time they have used
+        - leftmost two places: days
+        - middle two places: hours
+        - rightmost two places: minutes
+      - S: status of that run
+        - Q: queued (not started)
+        - R: running
+        - C: canceled (either recently finished or errored out)
+      - Queue: type of machine requested
+  5. Now, you will be in your home directory (~).
+    - If you have access to the GitHub repository:
+      - Fork the repository and clone it to the server. On the server, enter:
+        git clone https://github.com/<github_username>/simcov
+      - Enter your GitHub username and personal access token.
+    - If you have a zipped version of the repository:
+      - Copy the zip file over from your *local computer* to the server (NOT after ssh):
+        scp simcov-master.zip <username>@xena.alliance.unm.edu:~
+      - *On the server*, enter:
+        unzip simcov-master.zip
+  6. Build the simcov binary. *On the server*:
+    - Set the network conduit to IBV:
+      export UPCXX_NETWORK=ibv
+    - Load the UPCXX module:
+      module load upcxx/2020.10.0-python3-tsz6
+    - Clean and build:
+      cd simcov-master
+      ./build.sh clean && ./build.sh Release
+  7. Modify the default batch scripts for the desired run.
+    - Use your preferred editor to modify the script:
+      emacs xena_simcov_run.sh
+      - partition: desired machine (look at qgrok command)
+      - nodes: number of desired nodes
+        - 2-3 nodes usually suffice.
+        - The more nodes you allocate, the faster your run will finish, but the longer you will wait in the queue.
+      - ntasks-per-node: number of tasks per node (default: 16)
+      - time: estimated time for run
+        - Under-allocating time will cause your run to be automatically canceled at max time.
+        - Allocating a longer time means you will wait longer in the queue.
+        - Time:
+          - number before the dash: number of days (max: 3)
+          - leftmost two spaces after dash: number of hours
+          - middle two spaces after dash: number of hours
+          - rightmost two spaces after dash: number of seconds
+        - Default config will not take longer than one hour.
+      - job-name: appears in qstat command
+      - output: out file where information about the run and the run's stdout is stored
+    - After the double dash ("--") is the path to the binary:
+      - Default: install/bin/simcov
+      - If you get binary errors: absolute path to binary (/users/<username>/simcov/install/bin/simcov)
+    - Config file is specified after ("--config=")
+      - Default: covid\_default.config
+    - Output location is specified after ("--output=")
+      - Default: results
+      - Make sure to create this directory before starting the run:
+        mkdir results
+    - Any values listed in the config file can be specified within the batch script with:
+      --<config_value_name>=<desired_config_value>
+  8. Modify default config file for desired run.
+    - Use preferred editor to modify the config file:
+      emacs covid_default.config
+    - An explanation of all the parameters can be found in the default config file and in the SIMCoV paper.
+    - A semi-colon (;) can be used to comment out lines.
+  9. Start the run.
+    - *On the server*, enter:
+      sbatch xena_simcov_run.sh
+    - You can ignore the output: `sbatch: Account not specified in submission script...`
+    - Job ID is listed after `Submitted batch job <job_id>`.
+    - You can see more information about your run by using the `qgrok` and `qstat` commands.
+  10. Terminate your run.
+    - Find your job ID by running `qstat`.
+    - *On the server*, enter:
+      qdel <job_id>
+    - After re-running `qstat`, you should see that the run's status has changed to "C".
+
+0.3 Running on Wheeler
+  1. ATTENTION: this assumes that you have a CARC account with access to the Wheeler machine!
+  2. Open your terminal on your local computer and enter:
+    ssh <username>@wheeler.alliance.unm.edu
+  3. Enter your password. The screen will not indicate that a password is being typed, but it *is* registering that you are entering your password. Then, hit Enter.
+    - If it says `Connection closed by .... port ..`, this means you waited too long to put in your password. Re-enter the ssh command.
+  4. Useful commands:
+    qgrok
+      - queues: whether the machine is for running or debugging
+        - Code should be tested on debug compute nodes.
+        - Code should be run on default compute nodes.
+      - free: number of free machines of that type
+      - busy: number of busy machines of that type
+      - offline: number of offline machines of that type
+      - Running jobs: number of jobs currently running on that type of machine
+      - Nodes: number of nodes in use for that type of machine
+      - CPUs: number of CPUs in use for that type of machine
+    qstat
+      - Job ID: job ID assigned when a run is started
+      - Name: name of that run
+      - User: username of person that started that run
+      - Time Use: how much time they have used
+        - leftmost two places: days
+        - middle two places: hours
+        - rightmost two places: minutes
+      - S: status of that run
+        - Q: queued (not started)
+        - R: running
+        - C: canceled (either recently finished or errored out)
+      - Queue: type of machine requested
+  5. Now, you will be in your home directory (~).
+    - If you have access to the GitHub repository:
+      - Fork the repository and clone it to the server. *On the server*, enter:
+        git clone https://github.com/<github_username>/simcov
+      - Enter your GitHub username and personal access token.
+    - If you have a zipped version of the repository:
+      - Copy the zip file over from your local computer to the server (NOT after ssh):
+        scp simcov-master.zip <username>@wheeler.alliance.unm.edu:~
+      - *On the server*, enter:
+        unzip simcov-master.zip
+  6. Build the simcov binary. *On the server*, enter:
+    - Set the network conduit to IBV:
+      export UPCXX_NETWORK=ibv
+    - Load the UPCXX module:
+      module load gcc-9.3.0-gcc-4.8.5-jp4ulql
+      module load upcxx-2020.10.0-gcc-9.3.0-python3-j2xc5l4
+      module load cmake-3.18.2-gcc-9.3.0-57ha7sw
+    - Clean and build:
+      cd simcov-master
+      ./build.sh clean && ./build.sh Release
+  7. Modify default batch script for desired run.
+    - Use preferred editor to modify the script:
+      emacs wheeler_simcov_run.sh
+      - -q: desired machine (look at qgrok command)
+      - -l:
+        - nodes: number of nodes
+        - ppn: processes per node
+        - 2-3 nodes with 8 processes per node usually suffices.
+        - The more nodes you allocate, the faster your run will finish, but the longer you will wait in the queue.
+      - -l: walltime
+        - Under-allocating time will cause your run to be automatically canceled at max time.
+        - Allocating a longer time means you will wait longer in the queue.
+        - Time:
+          - leftmost two spaces after dash: number of hours (max: 48)
+          - middle two spaces after dash: number of hours
+          - rightmost two spaces after dash: number of seconds
+        - Default config will not take longer than one hour.
+      - -N: name of run in qstat command
+      - -j: how error and output files will be handled
+        - oe: merge output and error files - both streams will be merged, intermixed, as standard output
+      - -m: how the user will be notified of the run stopping/starting/being interrupted, etc.
+        - abe: sends email on job abort, begin, and end
+      - -M: Specifies email address to which mail should be sent.
+    - After the double dash ("--") is the path to the binary:
+      - Default: install/bin/simcov
+      - If you get binary errors: absolute path to binary (/users/<username>/simcov/install/bin/simcov)
+    - Config file is specified after ("--config=")
+      - Default: covid_default.config
+    - Output location is specified after ("--output=")
+      - Default: results
+      - Make sure to create this directory before starting the run:
+        mkdir results
+    - Any values listed in the config file can be specified within the batch script with:
+      --<config_value_name>=<desired_config_value>
+  8. Modify default config file for desired run.
+    - Use preferred editor to modify the config file:
+      emacs covid_default.config
+    - An explanation of all the parameters can be found in the default config file and in the SIMCoV paper.
+    - A semi-colon (;) can be used to comment out lines.
+  9. Start the run.
+    - *On the server*, enter:
+      qsub wheeler_simcov_run.pbs
+    - Job ID is listed: `<job_id>.wheeler-sn.alliance.unm.edu`.
+    - You can see more information about your run by using the `qgrok` and `qstat` commands.
+  10. Terminate your run.
+    - Find your job ID by running `qstat`.
+    - *On the server*, enter:
+      qdel <job_id>
+    - After re-running `qstat`, you should see that the run's status has changed to "C".
+
+0.4 Generating Visualization Files Using Paraview on MacOS
+  1. In the config file, change the sample period to the number of timesteps between each sample.
+    - It is recommended not to sample too frequently - for longer runs, the visualization files can get massive.
+  2. Run the sample_demo.config file as described above.
+    - On Xena: `sbatch xena_simcov_run.sh` with `--config=sample_demo.config`
+    - On Wheeler: `sbatch wheeler_simcov_run.pbs` with `--config=sample_demo.config`
+    - In the samples directory of the output directory, there should be chemokine, epicell, tcelltissue, and virus vtk files for each timestep.
+  3. Copy the entire output directory to location where you plan on installing Paraview. On your local computer (NOT after ssh):
+    scp -r <username>@<machine>.alliance.unm.edu:~/<path_to_output_dir> .
+  4. Download Paraview-5.9.1 (https://www.paraview.org/download/) and follow the default installation steps.
+  5. After described above, either clone or download the repository to your local computer:
+    - If you have access to the GitHub, fork and clone:
+      git clone https://github.com/<github_username>/simcov
+      cd simcov
+    - If you a zipped version of the repository:
+      unzip simcov-master.zip
+      cd simcov-master
+  6. Run the generate_paraview_state.py script in the scripts directory using pvpython (included in the Paraview installation).
+    - *On your local computer*, enter:
+      /Applications/Paraview-5.9.1.app/Contents/bin/pvpython scripts/generate_paraview_state.py --data <path_to_samples_dir> --stats <path_to_stats_file> -o <output_file_name>
+    - YOu might get some errors, but successful completion is indicated by the output: "Create a state file <output_file_name> for paraview"
+  7. Run Paraview for visualization:
+    - *On your local computer*, enter:
+      /Applications/Paraview-5.9.1.app/Contents/MacOS/paraview <output_file_name>.pvsm
+  8. To play the visualization, click the play button on the top (refer to sample-demo.mov).
+    - For more commands and a Paraview tutorial, visit the following link: https://www.paraview.org/Wiki/The_ParaView_Tutorial
+  9. Bonus: to shorten the Paraview commands, add /Applications/Paraview-5.9.1.app/Contents to your PATH.
+
+0.5 Code Overview
+  1. xena_simcov_run.sh
+    - Script to run default SIMCoV config on the Xena machine at CARC.
+  2. wheeler_simcov_run.pbs
+    - Script to run default SIMCoV config on the Wheeler machine at CARC.
+  3. small-test.config
+    - Config with small dimensions (100 x 100 x 1) and short run-time (2000 timesteps).
+  4. sample-demo.config
+    - Config with small dimensions (150 x 150 x 1), short run-time (120 timesteps), and sampling every 10 timesteps.
+  5. cycells.config
+    - Config for Cycells paper that inspired SIMCoV (https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4862360/).
+  6. covid_default.config
+    - Config for default SIMCoV values.
+  7. build.sh
+    - Build script (use described above).
+  8. src
+    - main.cpp
+      - Class definition for:
+        - SimStats: defines what stats and how stats are saved from runs
+      - Function definition for:
+        - seed_infection
+        - generate_tcells
+        - get_rnd_coord
+        - update_circulating_tcells
+        - update_tissue_tcell
+        - update_epicell
+        - update_chemokines
+        - update_virions
+        - diffuse
+        - spread_virions
+        - set_active_grid_points: this reduces how much of the grid is updated at each timestep, a bounding box of "active" grid points is determined and only those grid points are updated in the next timestep
+        - sample: get information that can be transformed into a visual representation of the infection and immune response (frequency of sampling is set in the config file)
+        - get_samples
+        - run_sim: start the simulation
+        - main: main code loop that allocates the processes and runs the simulation, while utilizing the functions listed/described above
+    - tissue.cpp
+      - Function definitions for:
+        - GridCoords::GridCoords: establishing the grid points
+        - GridCoords::to_1d: representing a block of grid points in 1D
+        - GridCoords::linear_to_block: representing a 1D, linear set of grid points as block
+        - TCell::TCell: establishing the tcells and sampling attributes from a Poisson distribution and according to the set parameters
+        - EpiCell::EpiCell: establishing the epicells (epithelail cells) and sampling attributes from a Poisson distribution and according to the set parameters
+        - EpiCell::str
+        - EpiCell::infect
+        - EpiCell::transition_to_expressing
+        - EpiCell::was_expressing
+        - EpiCell::apoptosis_death
+        - EpiCell::infection_death
+        - EpiCell::is_active: marks epicells that are not healthy or dead
+        - EpiCell::get_binding_prob
+        - GridPoint::str
+        - GridPoint::is_active: as mentioned before, only active grid points are updated
+        - get_cube_block_dim
+        - get_square_block_dim
+        - Tissue::Tissue: establishes the tissue where chemokines, epicells, tcells, and virions interact
+        - Tissue::load_data_file
+        - Tissue::get_rank_for_grid_point: get which process controls that grid point
+        - Tissue::get_local_grid_points: get the grid points controlled by that process
+        - Tissue::get_grid_point_sample_data
+        - Tissue::get_neighbors
+        - Tissue::get_num_local_grid_points: get the number of grid points controlled by the process locally
+        - Tissue::set_initial_infection
+        - Tissue::accumulate_chemokines
+        - Tissue::accumulate_virions
+        - Tissue::get_chemokines
+        - Tissue::get_num_circulating_tcells
+        - Tissue::change_num_circulating_tcells
+        - Tissue::try_add_new_tissue_tcell
+        - Tissue::try_add_tissue_tcell
+        - Tissue::try_bind_tcell
+        - Tissue::get_first_local_grid_point
+        - Tissue::get_next_local_grid_point
+        - Tissue::get_first_active_grid_point
+        - Tissue::get_next_active_grid_point
+        - Tissue::set_active
+        - Tissue::erase_active
+        - Tissue::add_new_actives
+        - Tissue::get_num_actives
+        - Tissue::check_actives
+    - utils.cpp
+      - Function definitions for:
+        - pin_thread
+        - dump_single_file: dump output into a single file
+  9. scripts
+    - dynamic_plot.py
+      - Plots the epicell, tcell, virion, and chemokine amounts over time.
+    - generate\_paraview\_state.py
+      - Uses pvpython to create a pvsm file that can be visualized in Paraview (see "Generating Visualization Files Using Paraview on MacOS").
+    - ode-tcl-model.py
+      - Script to create ODE model using scipy.integrate.odeint to replicate lower respiratory virion count predictions in the Ruian, et al. paper (https://www.medrxiv.org/content/10.1101/2020.09.25.20201772v1).
+      - ODE model was compared to the spatial SIMCoV model in terms of simulated virion production accuracy.
+    - plot_concentration.py
+      - Plot concentration of virions, used in comparison between representing virions as a floating point or integer.
+    - plot_state.py & plot_state_2.py
+      - Plot visual view of infection and immune system spread over time at certain timepoints.
+  10. lungmodel
+    - Scripts and code concerning creation of a fractal branching structure that mimics the lung.
+  11. include
+    - CLI11.hpp
+      - Command-line parser for C++11.
+    - bytell_hash_map.hpp & flat_hash_map.hpp
+      - Different version of hash maps used.
+    - hash_funcs.h
+      - Functions relating to hash maps.
+    - options.hpp
+      - Functions definitions for:
+        - vec_to_string
+        - setup_output_dir
+        - setup_log_file
+        - set_random_infections
+        - set_uniform_infections
+        - get_uniform_infections
+        - parse_infection_coords
+        - get_model_dims
+      - Sets default parameters and reads in config file parameters.
+    - tissue.hpp
+      - Class declarations for:
+        - GridBlocks
+        - EpiCellStatus
+        - SampleData
+        - Tissue
+        - EpiCell
+        - TCell
+        - ViewObject
+    - utils.hpp
+      - Class declaration for:
+        - Random
+      - Function definition for:
+        - trial_success: threshold for success depending on distribution
+        - get_normal: normal distribution
+        - get_poisson: Poisson distribution
+  - configs
+    - Config files for figures in SIMCoV paper

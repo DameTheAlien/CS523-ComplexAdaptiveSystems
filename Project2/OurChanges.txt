@@ -1,0 +1,17 @@
+TCell Arrival
+	Line 693-697
+
+Epithelial Cell Arrival
+	Line 731-734
+
+Chemokines Arrival
+	Line 735-738
+
+Virions Arrival
+	Line 739-742
+
+TCell Effectiveness
+	Line 186-187 
+
+Antibodies Effectiveness
+	Line 683-684

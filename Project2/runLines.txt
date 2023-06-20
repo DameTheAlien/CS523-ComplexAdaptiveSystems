@@ -1,0 +1,4 @@
+./upcxx-run -n 2 -N 1 -- /nfs/student/d/dfranco/CS/CS523/simcov/install/bin/simcov --config=/nfs/student/d/dfranco/CS/CS523/simcov/small-test.config --output=results
+
+
+/nfs/student/d/dfranco/CS/CS523/upcxxInstall/bin/upcxx-run -n 2 -N 1 -- /nfs/student/d/dfranco/CS/CS523/simcov/install/bin/simcov --config=/nfs/student/d/dfranco/CS/CS523/simcov/small-test.config
