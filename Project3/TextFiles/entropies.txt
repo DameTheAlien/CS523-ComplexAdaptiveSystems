@@ -1,0 +1,29 @@
+County Names:
+Los Angeles County, California
+Denver County, Colorado
+Milwaukee County, Wisconsin
+Bernalillo County, New Mexico
+
+Eligiblity?
+[0, 0, 0, 0, 0, 0, 0, 0, 0]
+[0, 0, 0, 0, 0, 0, 0, 0, 0]
+[0, 0, 0, 0, 1, 1, 1, 1, 1]
+[0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+Gentrified?
+[0, 1, 1, 1, 1, 1, 1, 1, 1]
+[1, 1, 1, 1, 1, 1, 1, 1, 1]
+[0, 0, 0, 0, 0, 0, 0, 0, 0]
+[0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+Shannon Entropys:
+Household Value:
+[2.19715972, 2.28103611, 0.76420451, 0.28199895] 
+
+Income:
+[1.35164412, 1.30552884, 0.51996667, 0.352211389]
+
+Education:
+[0.389975, 0.499925, 0.289975, 0.28199895]
+
+
